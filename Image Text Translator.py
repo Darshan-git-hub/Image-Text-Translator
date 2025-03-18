@@ -1,99 +1,136 @@
-from tkinter import *
-from tkinter import filedialog
-from PIL import Image
-from pytesseract import pytesseract
-from gtts import gTTS
-from googletrans import Translator
-from langcodes import *
-import urllib.request
 import os
 import tempfile
+import requests
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+from tkinter import StringVar, Text, WORD, END
+from PIL import Image, ImageOps
+from pytesseract import pytesseract
+from gtts import gTTS
+from deep_translator import GoogleTranslator
+from ttkbootstrap.dialogs import Messagebox
 
 
-class ImageTranslatorGUI:
+class ImageTranslatorApp:
     def __init__(self, master):
         self.master = master
         master.title("Image Text Translator")
+        master.geometry("700x500")
+        master.resizable(False, False)
 
-        # create the label and button for selecting the image file
-        self.file_label = Label(master, text="Enter image URL:")
-        self.file_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        # Title Label
+        ttk.Label(master, text="📷 Image Text Translator", font=("Arial", 16, "bold"), bootstyle="primary").pack(pady=10)
 
-        self.url_entry = Entry(master, width=50,)
-        self.url_entry.grid(row=0, column=1, padx=10, pady=10)
-        self.clear_button = Button(master, text="Clear URL", command=self.clear_text)
-        self.clear_button.grid(row=0, column=3, padx=10, pady=10)
+        # URL Input
+        self.url_var = StringVar()
+        ttk.Label(master, text="Enter Image URL:", font=("Arial", 12)).pack(anchor="w", padx=20)
+        frame = ttk.Frame(master)
+        frame.pack(pady=5, padx=20, fill=X)
+        self.url_entry = ttk.Entry(frame, textvariable=self.url_var, width=50, bootstyle="info")
+        self.url_entry.pack(side=LEFT, expand=True, fill=X, padx=(0, 5))
+        ttk.Button(frame, text="Load", command=self.load_image, bootstyle="primary").pack(side=LEFT)
 
-        self.clear_text_button = Button(master, text="clear the text box", command=self.clear_commentbox)
-        self.clear_text_button.grid(row=2, column=2, padx=10, pady=10)
+        # Language Selection
+        self.languages = {"Tamil": "ta", "Hindi": "hi", "Kannada": "kn", "Telugu": "te", "Japanese": "ja",
+                          "Malayalam": "ml"}
+        self.language_var = StringVar(value="Tamil")
 
-        self.browse_button = Button(master, text="Load Image", command=self.load_image)
-        self.browse_button.grid(row=0, column=2, padx=10, pady=10)
+        ttk.Label(master, text="Select Language:", font=("Arial", 12)).pack(anchor="w", padx=20, pady=(10, 0))
+        self.lang_menu = ttk.Combobox(master, textvariable=self.language_var, values=list(self.languages.keys()),
+                                      state="readonly", bootstyle="success")
+        self.lang_menu.pack(padx=20, pady=5, fill=X)
 
-        # create the label and button for translating the image text
-        self.lang_label = Label(master, text="Select language for translation:")
-        self.lang_label.grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        # Buttons
+        btn_frame = ttk.Frame(master)
+        btn_frame.pack(pady=10, padx=20, fill=X)
+        ttk.Button(btn_frame, text="Translate", command=self.translate_text, bootstyle="success").pack(side=LEFT,
+                                                                                                       expand=True,
+                                                                                                       padx=5)
+        ttk.Button(btn_frame, text="Play Speech", command=self.play_speech, bootstyle="warning").pack(side=LEFT,
+                                                                                                      expand=True,
+                                                                                                      padx=5)
+        ttk.Button(btn_frame, text="Clear", command=self.clear_textbox, bootstyle="danger").pack(side=LEFT, expand=True,
+                                                                                                 padx=5)
 
-        self.languages = {"Tamil": "ta", "Hindi": "hi", "Kannada": "kn", "Telugu": "te", "Japanese": "ja","Malayalam":"ml"}
-        self.language_var = StringVar(master)
-        self.language_var.set("Tamil")  # default language is Tamil
-        self.lang_menu = OptionMenu(master, self.language_var, *self.languages.keys())
-        self.lang_menu.grid(row=1, column=1, padx=10, pady=10)
+        # Text Box for Displaying Output
+        self.textbox = Text(master, width=80, height=10, wrap=WORD, font=("Arial", 12))
+        self.textbox.pack(padx=20, pady=5, fill=BOTH, expand=True)
 
-        self.translate_button = Button(master, text="Translate", command=self.translate_text)
-        self.translate_button.grid(row=1, column=2, padx=10, pady=10)
-
-        self.quit=Button(master,text="Quit",command= root.destroy)
-        self.quit.grid(row=2, column=3, padx=10, pady=10)
-
-        # create the label and button for playing the translated text as speech
-        self.speech_label = Label(master, text="Click to hear the translated text:")
-        self.speech_label.grid(row=2, column=0, padx=10, pady=10, sticky="w")
-
-        self.play_button = Button(master, text="Play Speech", command=self.playspeech)
-        self.play_button.grid(row=2, column=1, padx=10, pady=10)
-
-        # create the text box for displaying the image text and the translated text
-        self.textbox = Text(master, width=80, height=15, wrap=WORD, font=("Arial", 12))
-        self.textbox.grid(row=3, column=0, columnspan=4, padx=10, pady=10)
-
-    def clear_text(self):
-        self.url_entry.delete(0, END)
-
-    def clear_commentbox(self):
-        self.textbox.delete('1.0',END)
+        # Quit Button
+        ttk.Button(master, text="Quit", command=root.destroy, bootstyle="dark").pack(pady=10)
 
     def load_image(self):
-        url = self.url_entry.get()
-        self.image_path = self.download_image(url)
+        """Download image from URL"""
+        url = self.url_var.get().strip()
+        if not url:
+            Messagebox.show_error("Please enter a valid image URL.", "Error")
+            return
+
+        try:
+            self.image_path = self.download_image(url)
+            Messagebox.show_info("Image downloaded successfully!", "Success")
+        except Exception as e:
+            Messagebox.show_error(f"Failed to download image: {str(e)}", "Error")
 
     def download_image(self, url):
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+        """Save image to a temporary file"""
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.img')
         temp_file.close()
-        urllib.request.urlretrieve(url, temp_file.name)
+
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            with open(temp_file.name, 'wb') as f:
+                f.write(response.content)
+        else:
+            raise Exception("Failed to download image.")
+
         return temp_file.name
 
     def translate_text(self):
         try:
             path_to_tesseract = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
             pytesseract.tesseract_cmd = path_to_tesseract
+
             img = Image.open(self.image_path)
+            img = ImageOps.exif_transpose(img)  # Fix rotation
             text = pytesseract.image_to_string(img)
-            self.textbox.insert(END, f"Image Text:\n{text}\n\n")
-            translator = Translator(service_urls=['translate.google.com'])
-            translated_text = translator.translate(text, dest=self.languages[self.language_var.get()]).text
-            self.textbox.insert(END, f"Translated Text ({self.language_var.get()}):\n{translated_text}\n\n")
+
+            if not text.strip():
+                Messagebox.show_error("No text detected in the image.", "Error")
+                return
+
+            self.textbox.delete('1.0', END)
+            self.textbox.insert(END, f"📜 Extracted Text:\n{text}\n\n")
+
+            translated_text = GoogleTranslator(source='auto', target=self.languages[self.language_var.get()]).translate(
+                text)
+            self.textbox.insert(END, f"🌍 Translated Text ({self.language_var.get()}):\n{translated_text}\n\n")
+
             self.translated_text = translated_text
-            language = self.languages[self.language_var.get()]
-            speech = gTTS(text=self.translated_text, lang=language, slow=False)
-            speech.save("translated_speech.mp3")
-            self.textbox.insert(END, f"Speech file saved as translated_speech.mp3 \n\n")
-        except:
-            self.textbox.insert(END, f"Error: Please select an image file first.\n\n")
+            self.save_speech()
 
-    def playspeech(self):
+        except Exception as e:
+            Messagebox.show_error(f"Error: {str(e)}", "Translation Failed")
+
+    def save_speech(self):
+        """Convert text to speech"""
+        language = self.languages[self.language_var.get()]
+        speech = gTTS(text=self.translated_text, lang=language, slow=False)
+        speech.save("translated_speech.mp3")
+        self.textbox.insert(END, "🔊 Speech file saved as 'translated_speech.mp3' 🎧\n\n")
+
+    def play_speech(self):
+        """Play translated speech"""
+        if os.path.exists("translated_speech.mp3"):
             os.system("start translated_speech.mp3")
+        else:
+            Messagebox.show_error("No speech file found!", "Error")
 
-root = Tk()
-my_gui = ImageTranslatorGUI(root)
+    def clear_textbox(self):
+        self.textbox.delete('1.0', END)
+
+
+# Run the App with ttkbootstrap styling
+root = ttk.Window(themename="superhero")  # You can try "darkly", "cyborg", "flatly", etc.
+app = ImageTranslatorApp(root)
 root.mainloop()
