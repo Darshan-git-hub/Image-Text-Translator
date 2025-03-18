@@ -1,66 +1,79 @@
 # Image Text Translator
 
-This is a Python-based GUI application that extracts text from an image, translates it into a selected language, and converts the translated text into speech.
+A Python-based **Image Text Translator** using OCR and Google Translate. This application allows users to **extract text from an image**, translate it into multiple languages, and play the translated text as speech.
 
-## Features
-- Extracts text from images using OCR (Tesseract OCR)
-- Translates extracted text into Tamil, Hindi, Kannada, Telugu, Japanese, or Malayalam
-- Converts translated text into speech using Google Text-to-Speech (gTTS)
-- Supports image input via URL
-- Simple and interactive GUI using Tkinter
+## Features 🚀
+✅ **Extract text** from any image URL (JPEG, PNG, WEBP, HEIF, etc.)
+✅ **Translate** extracted text into **Tamil, Hindi, Kannada, Telugu, Japanese, Malayalam**
+✅ **Convert translated text into speech** (gTTS)
+✅ **Modern UI with dark mode support** using `ttkbootstrap`
+✅ **Progress alerts and error handling** for a smooth user experience
+✅ **Auto-fixes image rotation** to improve OCR accuracy
 
-## Requirements
-Ensure you have the following installed before running the script:
+---
 
-### Install Dependencies
+## Installation 🔧
+Ensure you have **Python 3.8+** installed. Then, install the required libraries:
+
 ```sh
-pip install pillow pytesseract gtts googletrans==4.0.0-rc1 langcodes tkinter
+pip install pillow pytesseract gtts deep-translator langcodes requests ttkbootstrap
 ```
 
-### Install Tesseract OCR
-Tesseract OCR is required for text extraction. Download and install it from:
-[Tesseract OCR Download](https://github.com/UB-Mannheim/tesseract/wiki)
+---
 
-After installation, update the script to specify the correct path to `tesseract.exe`. Example:
-```python
-path_to_tesseract = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-pytesseract.tesseract_cmd = path_to_tesseract
-```
-
-## How to Run
-1. Clone or download this script.
-2. Install dependencies as mentioned above.
-3. Run the script using:
+## Usage 🛠
+1. **Run the Application**
    ```sh
-   python script.py
+   python image_translator.py
    ```
-4. Enter an image URL and select a language for translation.
-5. Click `Load Image` to process the image.
-6. Click `Translate` to extract and translate text.
-7. Click `Play Speech` to hear the translated text.
 
-## Notes
-- The program uses Google Translate, so an internet connection is required.
-- Make sure the image URL is accessible and properly formatted.
-- The translated speech is saved as `translated_speech.mp3` and can be played from the script.
+2. **Enter an image URL** and click `Load`
+3. **Select a language** for translation
+4. Click `Translate` to extract & translate the text
+5. Click `Play Speech` to listen to the translated text
+6. Use `Clear` to reset the text box
+7. Click `Quit` to exit
 
-## Troubleshooting
-- If Tesseract OCR is not recognized, ensure it is installed and the correct path is set in the script.
-- If translation doesn't work, ensure you have an active internet connection.
-- If an image fails to load, verify the image URL.
+---
 
-## License
-This project is licensed under the MIT License. You are free to use, modify, and distribute it under the terms of the license.
+## Dependencies 📦
+| Library          | Purpose |
+|-----------------|------------------------------------------------|
+| `pillow`        | Image handling (PIL)                          |
+| `pytesseract`   | OCR (Optical Character Recognition)           |
+| `gtts`          | Convert text to speech                        |
+| `deep-translator` | Language translation using Google Translate |
+| `langcodes`     | Handle language codes                         |
+| `requests`      | Download images from URLs                     |
+| `ttkbootstrap`  | Modern UI with dark mode support              |
 
-Enjoy using the Image Text Translator!
+---
 
+## Notes 📌
+- **Ensure Tesseract-OCR is installed** (for text extraction)
+  - **Download**: [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)
+  - **Set path** in script:
+    ```python
+    pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    ```
 
+- **For Linux/Mac:** Replace `os.system("start translated_speech.mp3")` with:
+  ```python
+  os.system("mpg321 translated_speech.mp3")  # Linux
+  os.system("afplay translated_speech.mp3")  # macOS
+  ```
 
-![image](https://github.com/user-attachments/assets/eb88756c-d858-4978-9120-7fc2166dc5fe)
+---
 
-![image](https://github.com/user-attachments/assets/79e32f3e-6fd1-4d9a-a5f1-430bce151c8a)
+## Screenshots 🖼️
+![image](https://github.com/user-attachments/assets/b3b7d958-b843-4850-ae4b-921891e306f1)
+![image](https://github.com/user-attachments/assets/fdf86f72-0bf8-417f-bab5-74049a3289d3)
+![image](https://github.com/user-attachments/assets/54ad8a63-cdf5-4eb4-8d84-ac1d7eaf548c)
 
-## Text Translated
+---
 
-![image](https://github.com/user-attachments/assets/0e329290-a7c9-42c7-b4f1-110b71845d64)
+## License 📜
+This project is open-source under the **MIT License**.
+
+Feel free to contribute and enhance the project! 😊
 
